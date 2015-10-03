@@ -45,6 +45,8 @@ listens for requests. The client is started with the IP address and port number 
   - ###### Create a new sub-directory named DIRECTORY_NAME:
  
     ``` $ client> mkdir <DIRECTORY_NAME>```  
+
+
 ## Author
 &nbsp;&nbsp;&nbsp;&nbsp; Abdulrahman Mufti
 
