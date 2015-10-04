@@ -8,10 +8,12 @@ listens for requests. The client is started with the IP address and port number 
 
 ## Compiling
 - To compile the server: 
+  
   ```sh
   $ javac TCPServer.java 
   ```
 - To compile the client: 
+  
   ```sh
   $ javac TCPClient.java 
   ```
