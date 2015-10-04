@@ -25,6 +25,7 @@ listens for requests. The client is started with the IP address and port number 
      $ java TCPServer <PORT_NUMBER> 
      ```
   2. Connect the client to the server:
+  
      ```sh
      $ java TCPClient <SERVER_IP_ADDRESS> <SERVER_PORT_NUMBER> 
      ``` 
