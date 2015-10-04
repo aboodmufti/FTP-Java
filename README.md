@@ -20,6 +20,7 @@ listens for requests. The client is started with the IP address and port number 
 ## Usage
 - ### Running
   1. Start the server: 
+
      ```sh
      $ java TCPServer <PORT_NUMBER> 
      ```
