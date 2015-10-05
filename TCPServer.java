@@ -8,6 +8,8 @@ import java.lang.Exception;
 import java.util.*;
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+
 
 class TCPServer {    
     public static void main(String argv[]) throws Exception
@@ -102,50 +104,22 @@ class TCPServer {
                             File inputFile = new File(workingDir.getPath(), array[1]);
                             byte[] data = new byte[(int) inputFile.length()];
                             FileInputStream fis = new FileInputStream(inputFile);
-                            //fis.read(data, 0, data.length);
-                            //fis.close();
-                            DataOutputStream outToClient2 = new DataOutputStream(new BufferedOutputStream(connectionSocket.getOutputStream()));
-
+                            //DataOutputStream outToClient2 = new DataOutputStream(new BufferedOutputStream(connectionSocket.getOutputStream()));
+                            OutputStream outToClient2= connectionSocket.getOutputStream();
                             outToClient.writeBytes("<StartOfFile>\n");
                             outToClient.writeBytes("<NumberOfBytes>\n");
                             outToClient.writeBytes(data.length+"\n");
                             outToClient.writeBytes("<FileName>\n");
                             outToClient.writeBytes(array[1]+"\n");
 
-                            //outToClient.writeBytes("<FileNameEnd>\n");
-                            //for(int i = 0; i<data.length ;++i){
-                                //System.out.println(data[i]);
-                            //}
-                            TimeUnit.SECONDS.sleep(2);
-                            System.out.println("DEBUG1 : "+data.length);
-                            //for(int i = 0; i<data.length ;++i){
-                              //  outToClient.write(data[i]);
-                            //outToClient2.write(data, 0, data.length);
+                            TimeUnit.SECONDS.sleep(1);
                             int count;
-                            while ((count = fis.read(data)) > 0) {
+                            while ((count = fis.read(data,0,data.length)) > 0) {
                                 outToClient2.write(data, 0, count);
                             }
-                            //}
-                            //outToClient2.close();
+                            outToClient2.flush();
                             fis.close();
-                            //outToClient = new DataOutputStream(connectionSocket.getOutputStream());
-                            System.out.println("DEBUG2");
-                            //outToClient.writeBytes("<EndOfFile>\n");
-                            //outToClient.writeBytes("<EndOfStream>\n");
 
-                            /*
-                            List<String> list = Files.readAllLines(path);
-                            String[] fileArray = list.toArray(new String[list.size()]); 
-                            outToClient.writeBytes("<StartOfFile>\n");
-                            outToClient.writeBytes("<FileName>\n");
-                            outToClient.writeBytes(array[1]+"\n");
-                            //outToClient.writeBytes("<FileNameEnd>\n");
-                            for(int i = 0; i<fileArray.length ;++i){
-                                outToClient.writeBytes(fileArray[i]+"\n");
-                            }
-                            outToClient.writeBytes("<EndOfFile>\n");
-                            outToClient.writeBytes("<EndOfStream>\n");
-                            */
                         }
 
                     }else if(array[0].equals("put")){
@@ -153,27 +127,35 @@ class TCPServer {
                         String line = inFromClient.readLine();
 
                         if(line.equals("<StartOfFile>")){
-                            File tempFile = new File(workingDir.getPath(),"TEMP_FILE_DELETE_WHEN_DONE.txt");
-                            
-                            PrintWriter inFile = new PrintWriter(tempFile);
-                            
-                            while( !((line = inFromClient.readLine()).equals("<EndOfFile>"))) {
-                                if(line.equals("<FileName>")){
-                                    line = inFromClient.readLine();
-                                    File newFile = new File(workingDir.getPath(),line);
-
-                                    inFile = new PrintWriter(newFile);
-                                    line = inFromClient.readLine();
-                                }
-                                inFile.println(line);
+                            InputStream bytesIn2 =connectionSocket.getInputStream();
+                            line = inFromClient.readLine();
+                            byte[] data = new byte[1];
+                            int byteNum = 0;
+                            if(line.equals("<NumberOfBytes>")){
+                                line = inFromClient.readLine();
+                                data = new byte[Integer.parseInt(line)];
+                                byteNum = Integer.parseInt(line);
                             }
-                            inFile.close();
-                            inFromClient.readLine();
-                            System.out.println("File succesfully transfered.\n");
-                            Path path = Paths.get(workingDir.getPath(), "TEMP_FILE_DELETE_WHEN_DONE.txt");
-                            Files.deleteIfExists(path);
-                            outToClient.writeBytes("File succefully sent.\n");
+                            line = inFromClient.readLine();
+                            String name = "";
+                            if(line.equals("<FileName>")){
+                                line = inFromClient.readLine();
+                                name = line;
+                            }
+                            File fileCreated = new File(currDir(),name);
+                            fileCreated.createNewFile();
+                            FileOutputStream newFile = new FileOutputStream(fileCreated);
+                            int count;
+                            int i = 0 ;
+                            while ((count = bytesIn2.read(data, 0, data.length)) > 0) {
+                                newFile.write(data, 0, count);
+                                i += count;
+                                print("i value : "+i + "  ---- byteNumber : " + byteNum);
+                                if(i >= byteNum-1){ print("TRUE");break;}else{print("FALSE");}
+                            }
+                            newFile.close();
                             outToClient.writeBytes("<EndOfStream>\n");
+                            System.out.println("File succesfully transfered.\n");
                         }
 
                     }else if(array[0].equals(".exit")){
@@ -181,12 +163,17 @@ class TCPServer {
                         outToClient.writeBytes("<EndOfStream>\n");
                         //System.exit(0);
                         break;
+                    }else if(array[0].equals("pwd")){
+                        outToClient.writeBytes("Current Directory: "+workingDir.getPath()+"\n");
+                        outToClient.writeBytes("<EndOfStream>\n");
+                        
                     }else{
                         System.out.println("Wrong input: " +clientSentence);
                         outToClient.writeBytes("Please enter a valid command.\n");
                         outToClient.writeBytes("<EndOfStream>\n");
                     }
                 }
+                
             }catch(NullPointerException e) {
                 System.out.println("Client has diconnected");
                 //System.exit(0);
@@ -284,5 +271,9 @@ class TCPServer {
             }
             return array2;
         }
+
+    public static void print(String stuff){
+        System.out.println(stuff);
+    }
 
 } 

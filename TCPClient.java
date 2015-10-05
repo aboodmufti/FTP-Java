@@ -7,6 +7,7 @@ import java.lang.Exception;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.io.PrintWriter;
+import java.util.concurrent.TimeUnit;
 
 class TCPClient {  
 
@@ -14,7 +15,6 @@ class TCPClient {
 
         String sentence = "";   
         String modifiedSentence;  
-        //String name =  argv[2];
         StringBuilder everything;
         String line;
         BufferedReader inFromUser = new BufferedReader( new InputStreamReader(System.in));   
@@ -44,92 +44,66 @@ class TCPClient {
                         System.out.println("File doesnt not exist");
                         sendingFile = false;
                     }else{
-                        List<String> list = Files.readAllLines(path);
-                        String[] fileArray = list.toArray(new String[list.size()]); 
-
+                        File inputFile = new File(currDir(), array[1]);
+                        byte[] data = new byte[(int) inputFile.length()];
+                        FileInputStream fis = new FileInputStream(inputFile);
+                        //DataOutputStream outToClient2 = new DataOutputStream(new BufferedOutputStream(connectionSocket.getOutputStream()));
+                        OutputStream outToClient2 = clientSocket.getOutputStream();
                         outToServer.writeBytes("<StartOfFile>\n");
+                        outToServer.writeBytes("<NumberOfBytes>\n");
+                        outToServer.writeBytes(data.length+"\n");
                         outToServer.writeBytes("<FileName>\n");
                         outToServer.writeBytes(array[1]+"\n");
-                        //outToClient.writeBytes("<FileNameEnd>\n");
-                        for(int i = 0; i<fileArray.length ;++i){
-                            outToServer.writeBytes(fileArray[i]+"\n");
+
+                        TimeUnit.SECONDS.sleep(1);
+                        int count;
+                        while ((count = fis.read(data,0,data.length)) > 0) {
+                            outToClient2.write(data, 0, count);
                         }
-                        outToServer.writeBytes("<EndOfFile>\n");
-                        outToServer.writeBytes("<EndOfStream>\n");
+                        outToClient2.flush();
+                        fis.close();
+                        sendingFile = true;
                     }
                 }
-
                 everything = new StringBuilder();
                 line = "";
-                
                 while( !((line = inFromServer.readLine()).equals("<EndOfStream>")) && !sendingFile) {
-
+                    print("DEBUG inside WHILE");
                     if(line.equals("<StartOfFile>")){
-
+                        InputStream bytesIn2 =clientSocket.getInputStream();
                         line = inFromServer.readLine();
                         byte[] data = new byte[1];
-                        print("DEBUG0: "+line);
                         int byteNum = 0;
                         if(line.equals("<NumberOfBytes>")){
                             line = inFromServer.readLine();
                             data = new byte[Integer.parseInt(line)];
                             byteNum = Integer.parseInt(line);
                         }
-                        print("DEBUG1: "+line);
-                        //PrintWriter inFile = new PrintWriter("TEMP_FILE_DELETE_WHEN_DONE.txt", "UTF-8");
-                        //while( !((line = inFromServer.readLine()).equals("<EndOfFile>"))) {
                         line = inFromServer.readLine();
-                        print("DEBUG2: "+line);
                         String name = "";
                         if(line.equals("<FileName>")){
                             line = inFromServer.readLine();
                             name = line;
-                            //inFile = new PrintWriter(line, "UTF-8");
-                            //line = inFromServer.readLine();
                         }
-                        print("DEBUG3: "+line);
-                        
-                        print("DEBUG4: data length: "+ data.length);
-                        /*for(int i = 0; i < data.length; ++i){
-                            print("DATA : "+ bytesIn.read());
-                        }*/
-                        //inStream.read(data, 0, data.length);
-                        //bytesIn.read(data);
-                        print("DEBUG5");
-                            //inFile.println(line);
-                        //}
-                        //inFile.close();
                         File fileCreated = new File(currDir(),name);
                         fileCreated.createNewFile();
                         FileOutputStream newFile = new FileOutputStream(fileCreated);
-                        data = new byte[byteNum];
                         int count;
                         int i = 0 ;
-                        print("DEBUG6 : " +byteNum);
-                        while ((count = inStream.read(data, 0, 1)) > 0) {
-                            print("DEBUG1829");
+                        while ((count = bytesIn2.read(data, 0, data.length)) > 0) {
                             newFile.write(data, 0, count);
-                            //print("COUNT: "+ count);
                             i += count;
                             print("i value : "+i + "  ---- byteNumber : " + byteNum);
                             if(i >= byteNum-1){ print("TRUE");break;}else{print("FALSE");}
                         }
-                        //newFile.write(data, 0, data.length);
                         newFile.close();
                         
-                        //print("DEBUG6"+inFromServer.readLine());
                         everything.append("File succesfully transfered.\n");
-                        //print("DEBUG6"+inFromServer.readLine());
-                        //Path path = Paths.get(currDir(), "TEMP_FILE_DELETE_WHEN_DONE.txt");
-                        //Files.deleteIfExists(path);
-
                         break;
                     }
                     everything.append(line+"\n");
                     
                 }
-                
-                //modifiedSentence = inFromServer.readLine();   
                 System.out.println(everything.toString());   
             }
             clientSocket.close();
