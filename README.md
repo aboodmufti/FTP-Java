@@ -46,10 +46,10 @@ listens for requests. The client is started with the IP address and port number 
   - ###### Change the directory on the server:
  
     ``` $ client> cd <DIRECTORY_NAME>```  
-  - ###### Create a new sub-directory named DIRECTORY_NAME:
+  - ###### Create a new sub-directory named DIRECTORY_NAME on the server:
  
     ``` $ client> mkdir <DIRECTORY_NAME>```
-  - ###### Print on the client window the current directory on the server machine:
+  - ###### Print on the client window the current directory on the server:
 
     ``` $ client> pwd``` 
 
