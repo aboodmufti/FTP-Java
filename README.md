@@ -52,6 +52,9 @@ listens for requests. The client is started with the IP address and port number 
   - ###### Print on the client window the current directory on the server:
 
     ``` $ client> pwd``` 
+  - ###### Shutdown the client process:
+
+    ``` $ client> .exit``` 
 
 
 ## Author
