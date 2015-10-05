@@ -48,7 +48,10 @@ listens for requests. The client is started with the IP address and port number 
     ``` $ client> cd <DIRECTORY_NAME>```  
   - ###### Create a new sub-directory named DIRECTORY_NAME:
  
-    ``` $ client> mkdir <DIRECTORY_NAME>```  
+    ``` $ client> mkdir <DIRECTORY_NAME>```
+  - ###### Print on the client window the current directory on the server machine:
+
+    ``` $ client> pwd``` 
 
 
 ## Author
