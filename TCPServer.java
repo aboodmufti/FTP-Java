@@ -13,9 +13,18 @@ import java.util.Arrays;
 
 class TCPServer {    
     public static void main(String argv[]) throws Exception
-    {
+    {   
+        //Check if the port is specified
+        if(argv.length < 1 ){
+            print("Missing arguments, the right way to run the process is: TCPServer <SERVER_PORT>");
+            System.exit(0);
+        }
+
+        //create the socket on the specified port
         ServerSocket welcomeSocket = new ServerSocket(Integer.parseInt(argv[0]));
         System.out.println("Server is listening on port: "+argv[0]+" , and IP address: "+InetAddress.getLocalHost().getHostAddress());
+        
+        //always run this function, until the user interrupts the process
         while(true){
             server(argv,welcomeSocket);
         }
@@ -23,6 +32,8 @@ class TCPServer {
     }
 
     private static void server(String[] argv, ServerSocket welcomeSocket) throws Exception{
+            
+            //set the starting directory to be seen by the client to the directory of the server process
             String orignalPath = currDir();
             File workingDir = new File(orignalPath);
 
@@ -31,6 +42,7 @@ class TCPServer {
 
             
             try{
+                //accept new connections
                 Socket connectionSocket = welcomeSocket.accept();
                 System.out.println("A new client is now connected to your machine. Client IP address is : "+ connectionSocket.getInetAddress().toString());
 
@@ -41,7 +53,7 @@ class TCPServer {
                 String[] array;
                 while(true)
                 {
-
+                    //read the client's command and split it into an array of words
                     clientSentence = inFromClient.readLine();
                     array = clientSentence.split("[ ]+");
 
@@ -49,6 +61,7 @@ class TCPServer {
                         array = removeFirst(array);
                     } 
 
+                    //checking what kind of command it is 
                     if(array[0].equals("ls")){
 
                         System.out.println("client is listing the files in your directory");
@@ -94,24 +107,33 @@ class TCPServer {
                         }
                     }else if(array[0].equals("get")){
                         System.out.println("client is getting a file from your system");
-                        Path path = Paths.get(workingDir.getPath(), array[1]);
+                        //handling the case when the file name contains spaces
+                        String filename = "";
+                        for(int i = 1; i<array.length ;++i){
+                            filename += array[i];
+                            if(i != array.length-1){
+                                filename += " ";
+                            }
+                        }
+                        Path path = Paths.get(workingDir.getPath(), filename);
 
+                        //check if file exists
                         if (!Files.exists(path)) {
-                            outToClient.writeBytes("No such file \""+array[1]+"\".\n");
+                            outToClient.writeBytes("No such file \""+filename+"\".\n");
                             outToClient.writeBytes("<EndOfStream>\n");
                             
                         }else{
-                            File inputFile = new File(workingDir.getPath(), array[1]);
+                            
+                            File inputFile = new File(workingDir.getPath(), filename);
                             byte[] data = new byte[(int) inputFile.length()];
                             FileInputStream fis = new FileInputStream(inputFile);
-                            //DataOutputStream outToClient2 = new DataOutputStream(new BufferedOutputStream(connectionSocket.getOutputStream()));
                             OutputStream outToClient2= connectionSocket.getOutputStream();
                             outToClient.writeBytes("<StartOfFile>\n");
                             outToClient.writeBytes("<NumberOfBytes>\n");
                             outToClient.writeBytes(data.length+"\n");
                             outToClient.writeBytes("<FileName>\n");
-                            outToClient.writeBytes(array[1]+"\n");
-
+                            outToClient.writeBytes(filename+"\n");
+                            //wait for the client, to synchronize
                             TimeUnit.SECONDS.sleep(1);
                             int count;
                             while ((count = fis.read(data,0,data.length)) > 0) {
@@ -142,7 +164,7 @@ class TCPServer {
                                 line = inFromClient.readLine();
                                 name = line;
                             }
-                            File fileCreated = new File(currDir(),name);
+                            File fileCreated = new File(workingDir.getPath(),name);
                             fileCreated.createNewFile();
                             FileOutputStream newFile = new FileOutputStream(fileCreated);
                             int count;
@@ -150,8 +172,8 @@ class TCPServer {
                             while ((count = bytesIn2.read(data, 0, data.length)) > 0) {
                                 newFile.write(data, 0, count);
                                 i += count;
-                                print("i value : "+i + "  ---- byteNumber : " + byteNum);
-                                if(i >= byteNum-1){ print("TRUE");break;}else{print("FALSE");}
+                                //print("i value : "+i + "  ---- byteNumber : " + byteNum);
+                                if(i >= byteNum-1){ break;}
                             }
                             newFile.close();
                             outToClient.writeBytes("<EndOfStream>\n");
@@ -181,31 +203,7 @@ class TCPServer {
             }
 
     }
-    //takes an array of strings
-    private static String executeCommand(String[] command) {
 
-        StringBuffer output = new StringBuffer();
-
-        Process p;
-
-        try {
-            p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            BufferedReader reader = 
-                            new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            String line = "";           
-            while ((line = reader.readLine())!= null) {
-                output.append(line + "\n");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return output.toString();
-
-    } 
     //Returns the current directory that the program is running in
     private static String currDir() {
 
@@ -258,7 +256,10 @@ class TCPServer {
     //Removes first element of an array
     private static String[] removeFirst(String[] array) {
             int length = array.length;
-            
+            System.out.println(length);
+            if(length <= 1){
+                return array;
+            }
             String[] array2 = new String[length];
 
             //System.arraycopy(array, 1, array2, 0, length );

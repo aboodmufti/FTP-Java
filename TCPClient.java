@@ -13,6 +13,11 @@ class TCPClient {
 
     public static void main(String argv[]) throws Exception  {   
 
+        if(argv.length < 2 ){
+            print("Missing arguments, the right way to run the process is: TCPClient <SERVER_IP_ADDRESS> <SERVER_PORT>");
+            System.exit(0);
+        }
+
         String sentence = "";   
         String modifiedSentence;  
         StringBuilder everything;
@@ -38,22 +43,27 @@ class TCPClient {
 
                 if(array[0].equals("put")){
                     sendingFile = true;
-                    Path path = Paths.get(currDir(), array[1]);
-
+                    String filename = "";
+                    for(int i = 1; i<array.length ;++i){
+                        filename += array[i];
+                        if(i != array.length-1){
+                            filename += " ";
+                        }
+                    }
+                    Path path = Paths.get(currDir(), filename);
                     if (!Files.exists(path)) {
                         System.out.println("File doesnt not exist");
                         sendingFile = false;
                     }else{
-                        File inputFile = new File(currDir(), array[1]);
+                        File inputFile = new File(currDir(), filename);
                         byte[] data = new byte[(int) inputFile.length()];
                         FileInputStream fis = new FileInputStream(inputFile);
-                        //DataOutputStream outToClient2 = new DataOutputStream(new BufferedOutputStream(connectionSocket.getOutputStream()));
                         OutputStream outToClient2 = clientSocket.getOutputStream();
                         outToServer.writeBytes("<StartOfFile>\n");
                         outToServer.writeBytes("<NumberOfBytes>\n");
                         outToServer.writeBytes(data.length+"\n");
                         outToServer.writeBytes("<FileName>\n");
-                        outToServer.writeBytes(array[1]+"\n");
+                        outToServer.writeBytes(filename+"\n");
 
                         TimeUnit.SECONDS.sleep(1);
                         int count;
@@ -68,7 +78,6 @@ class TCPClient {
                 everything = new StringBuilder();
                 line = "";
                 while( !((line = inFromServer.readLine()).equals("<EndOfStream>")) && !sendingFile) {
-                    print("DEBUG inside WHILE");
                     if(line.equals("<StartOfFile>")){
                         InputStream bytesIn2 =clientSocket.getInputStream();
                         line = inFromServer.readLine();
@@ -93,8 +102,8 @@ class TCPClient {
                         while ((count = bytesIn2.read(data, 0, data.length)) > 0) {
                             newFile.write(data, 0, count);
                             i += count;
-                            print("i value : "+i + "  ---- byteNumber : " + byteNum);
-                            if(i >= byteNum-1){ print("TRUE");break;}else{print("FALSE");}
+                            //print("i value : "+i + "  ---- byteNumber : " + byteNum);
+                            if(i >= byteNum-1){ break;}
                         }
                         newFile.close();
                         
@@ -107,13 +116,20 @@ class TCPClient {
                 System.out.println(everything.toString());   
             }
             clientSocket.close();
+            
         }catch(ConnectException e) {
             System.out.println("Error: "+e.getMessage()+"\nPlease make sure you put the right server info and that the server is listening.");
+            System.exit(1);
+        }catch(SocketException e) {
+            System.out.println("Error: "+e.getMessage()+"\nSeems like there has been a problem connecting to the server, please make sure the server is running.");
+            System.exit(1);
+        }catch(NullPointerException e) {
+            System.out.println("Error: "+e.getMessage()+"\nConnection was lost, please try to reconnect.");
             System.exit(1);
         }
     } 
 
-
+    //returns the current directory
     private static String currDir() {
 
         StringBuffer output = new StringBuffer();
